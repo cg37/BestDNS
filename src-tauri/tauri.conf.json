@@ -13,8 +13,15 @@
     "windows": [
       {
         "title": "bestdns",
-        "width": 800,
-        "height": 600
+        "width": 1100,
+        "height": 650,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "transparent": false,
+        "windowEffects": {
+          "effects": []
+        }
       }
     ],
     "security": {
