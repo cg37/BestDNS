@@ -6,6 +6,9 @@ on:
       - 'v*'
   workflow_dispatch:
 
+# 自动生成的 Release Notes 配置
+# 基于 PR 标签自动分类：https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes
+
 jobs:
   build:
     permissions:
