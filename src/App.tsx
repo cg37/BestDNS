@@ -1,68 +1,35 @@
 import { useState, useEffect, useCallback } from "react";
-import { WifiSync, Copy } from "lucide-react";
-
-// Status Icons - Flat Design
 import { invoke } from "@tauri-apps/api/core";
+import {
+  MantineProvider,
+  Container,
+  Title,
+  Text,
+  Button,
+  Table,
+  Badge,
+  Progress,
+  Select,
+  Group,
+  Stack,
+  Paper,
+  CopyButton,
+  Tooltip,
+  ThemeIcon,
+  Flex,
+  Box,
+} from "@mantine/core";
+import {
+  IconWifi,
+  IconTrophy,
+  IconCopy,
+  IconCheck,
+  IconPlayerPlay,
+  IconClock,
+  IconX,
+} from "@tabler/icons-react";
+import "@mantine/core/styles.css";
 import "./App.css";
-
-// Status Icons - Flat Design
-const StatusSuccess = () => (
-  <svg className="status-icon success" viewBox="0 0 20 20" fill="none">
-    <circle cx="10" cy="10" r="9" stroke="#34C759" strokeWidth="1.5" />
-    <path
-      d="M6 10L9 13L14 7"
-      stroke="#34C759"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-const StatusError = () => (
-  <svg className="status-icon error" viewBox="0 0 20 20" fill="none">
-    <circle cx="10" cy="10" r="9" stroke="#FF3B30" strokeWidth="1.5" />
-    <path
-      d="M7 7L13 13M13 7L7 13"
-      stroke="#FF3B30"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
-const StatusPending = () => (
-  <svg className="status-icon pending" viewBox="0 0 20 20" fill="none">
-    <circle cx="10" cy="10" r="9" stroke="#8E8E93" strokeWidth="1.5" />
-    <circle cx="10" cy="10" r="2" fill="#8E8E93" />
-  </svg>
-);
-
-const CopyIcon = () => <Copy />;
-
-const CheckIcon = () => (
-  <svg className="check-icon" viewBox="0 0 16 16" fill="none">
-    <path
-      d="M3 8L6.5 11.5L13 5"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-const TrophyIcon = () => (
-  <svg className="trophy-icon" viewBox="0 0 20 20" fill="none">
-    <path
-      d="M5 4H15M5 4C5 4 4 8 7 10M5 4V6M15 4C15 4 16 8 13 10M15 4V6M7 10V15L10 17L13 15V10M7 10H13"
-      stroke="#FFD700"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
 
 interface DnsServer {
   name: string;
@@ -78,6 +45,20 @@ interface DnsResult {
   error: string | null;
 }
 
+// 延迟颜色映射
+const getLatencyColor = (latency: number | null): string => {
+  if (latency === null) return "gray";
+  if (latency < 50) return "green";
+  if (latency < 100) return "teal";
+  if (latency < 200) return "yellow";
+  return "red";
+};
+
+const getLatencyText = (latency: number | null): string => {
+  if (latency === null) return "未测试";
+  return `${latency}ms`;
+};
+
 function App() {
   const [results, setResults] = useState<DnsResult[]>([]);
   const [isTesting, setIsTesting] = useState(false);
@@ -85,18 +66,7 @@ function App() {
   const [sortBy, setSortBy] = useState<"latency" | "provider" | "location">(
     "latency",
   );
-  const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const [hasTested, setHasTested] = useState(false);
-
-  const copyToClipboard = async (address: string) => {
-    try {
-      await navigator.clipboard.writeText(address);
-      setCopiedAddress(address);
-      setTimeout(() => setCopiedAddress(null), 2000);
-    } catch (err) {
-      console.error("Failed to copy:", err);
-    }
-  };
 
   const fetchDnsList = useCallback(async () => {
     try {
@@ -123,12 +93,11 @@ function App() {
     let interval: ReturnType<typeof setInterval>;
     if (isTesting) {
       setProgress(0);
-      const baseIncrement = 0.9; // 基础增量
+      const baseIncrement = 0.9;
 
       interval = setInterval(() => {
         setProgress((prev) => {
           if (prev >= 90) return 90;
-          // 基础增量 + 随机波动 (-0.3 到 +0.6)
           const randomFactor = (Math.random() - 0.3) * 0.9;
           const actualIncrement = Math.max(0.3, baseIncrement + randomFactor);
           return Math.min(prev + actualIncrement, 90);
@@ -151,19 +120,6 @@ function App() {
     setProgress(100);
   };
 
-  const getLatencyColor = (latency: number | null) => {
-    if (latency === null) return "gray";
-    if (latency < 50) return "#4caf50";
-    if (latency < 100) return "#8bc34a";
-    if (latency < 200) return "#ff9800";
-    return "#f44336";
-  };
-
-  const getLatencyText = (latency: number | null) => {
-    if (latency === null) return "未测试";
-    return `${latency}ms`;
-  };
-
   const sortedResults = [...results].sort((a, b) => {
     switch (sortBy) {
       case "latency":
@@ -183,170 +139,286 @@ function App() {
     .filter((r) => r.latency_ms !== null)
     .sort((a, b) => (a.latency_ms || Infinity) - (b.latency_ms || Infinity))[0];
 
+  // 状态图标
+  const StatusIcon = ({ result }: { result: DnsResult }) => {
+    if (result.success) {
+      return (
+        <ThemeIcon color="green" variant="light" size="sm" radius="xl">
+          <IconCheck size={16} />
+        </ThemeIcon>
+      );
+    }
+    if (result.error) {
+      return (
+        <ThemeIcon color="red" variant="light" size="sm" radius="xl">
+          <IconX size={16} />
+        </ThemeIcon>
+      );
+    }
+    return (
+      <ThemeIcon color="gray" variant="light" size="sm" radius="xl">
+        <IconClock size={16} />
+      </ThemeIcon>
+    );
+  };
+
   return (
-    <main className="container">
-      <div className="content">
-        <header className="header">
-          <h1>🌐 BestDNS - DNS 测速工具</h1>
-          <p>测试常见 DNS 服务器的响应速度，选择最快的 DNS</p>
-        </header>
-
-        <div className="controls">
-          <button className="test-btn" onClick={testAll} disabled={isTesting}>
-            {isTesting ? (
-              "测试中..."
-            ) : (
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "8px" }}
-              >
-                <WifiSync />
-                开始测速
-              </div>
-            )}
-          </button>
-
-          <div className="sort-control">
-            <label>排序:</label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
+    <MantineProvider
+      defaultColorScheme="dark"
+      theme={{
+        primaryColor: "cyan",
+        fontFamily:
+          '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      }}
+    >
+      <Box
+        style={{
+          minHeight: "100vh",
+          maxHeight: "100vh",
+          overflowY: "auto",
+          background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
+          padding: "20px",
+        }}
+      >
+        <Container size="xl">
+          <Stack gap="lg">
+            {/* Header */}
+            <Paper
+              p="xl"
+              radius="md"
+              style={{
+                background: "rgba(0, 0, 0, 0.2)",
+                textAlign: "center",
+              }}
             >
-              <option value="latency">按延迟</option>
-              <option value="provider">按提供商</option>
-              <option value="location">按地区</option>
-            </select>
-          </div>
-        </div>
+              <Group justify="center" gap="xs" mb="xs">
+                <IconWifi size={32} color="#00d4ff" />
+                <Title order={1} style={{ color: "#fff" }}>
+                  BestDNS
+                </Title>
+              </Group>
+              <Text c="dimmed">测试常见 DNS 服务器的响应速度</Text>
+            </Paper>
 
-        {isTesting && (
-          <div className="progress-bar">
-            <div className="progress-fill" style={{ width: `${progress}%` }} />
-          </div>
-        )}
-
-        {hasTested && fastest && (
-          <div className="fastest-banner">
-            <TrophyIcon /> <span>最快:</span>{" "}
-            <strong>{fastest.server.name}</strong>
-            <span className="fastest-address-group">
-              <span className="address-text">{fastest.server.address}</span>
-              <button
-                className={`copy-btn-inline ${copiedAddress === fastest.server.address ? "copied" : ""}`}
-                onClick={() => copyToClipboard(fastest.server.address)}
-                title="复制地址"
-              >
-                {copiedAddress === fastest.server.address ? (
-                  <>
-                    <CheckIcon /> 已复制
-                  </>
-                ) : (
-                  <>
-                    <CopyIcon /> 复制
-                  </>
-                )}
-              </button>
-            </span>
-            <span style={{ color: getLatencyColor(fastest.latency_ms) }}>
-              {getLatencyText(fastest.latency_ms)}
-            </span>
-          </div>
-        )}
-
-        {!hasTested && (
-          <div className="empty-state">
-            <p>点击上方按钮开始 DNS 测速</p>
-          </div>
-        )}
-
-        <div className="dns-list">
-          <div className="dns-header">
-            <span>状态</span>
-            <span>DNS 服务器</span>
-            <span>地址</span>
-            <span>提供商</span>
-            <span>地区</span>
-            <span>延迟</span>
-          </div>
-
-          {sortedResults.map((result, index) => (
-            <div
-              key={result.server.address}
-              className={`dns-item ${result.success ? "success" : ""} ${
-                fastest?.server.address === result.server.address
-                  ? "fastest"
-                  : ""
-              }`}
-              style={{ animationDelay: `${index * 0.05}s` }}
-            >
-              <span className="status">
-                {result.success ? (
-                  <StatusSuccess />
-                ) : result.error ? (
-                  <StatusError />
-                ) : (
-                  <StatusPending />
-                )}
-              </span>
-              <span className="name">{result.server.name}</span>
-              <span className="address-cell">
-                <span className="address-text">{result.server.address}</span>
-                <button
-                  className={`copy-btn ${copiedAddress === result.server.address ? "copied" : ""}`}
-                  onClick={() => copyToClipboard(result.server.address)}
-                  title="复制地址"
+            {/* Controls */}
+            <Paper p="md" radius="md" style={{ background: "rgba(0,0,0,0.2)" }}>
+              <Group justify="center" gap="md">
+                <Button
+                  size="lg"
+                  leftSection={isTesting ? undefined : <IconPlayerPlay size={20} />}
+                  onClick={testAll}
+                  disabled={isTesting}
+                  loading={isTesting}
+                  gradient={{ from: "cyan", to: "grape" }}
+                  variant="gradient"
+                  radius="xl"
                 >
-                  {copiedAddress === result.server.address ? (
-                    <CheckIcon />
-                  ) : (
-                    <CopyIcon />
-                  )}
-                </button>
-              </span>
-              <span className="provider">{result.server.provider}</span>
-              <span className="location">{result.server.location}</span>
-              <span
-                className="latency"
-                style={{ color: getLatencyColor(result.latency_ms) }}
+                  {isTesting ? "测试中..." : "开始测速"}
+                </Button>
+
+                <Select
+                  label="排序方式"
+                  value={sortBy}
+                  onChange={(v) =>
+                    setSortBy(v as "latency" | "provider" | "location")
+                  }
+                  data={[
+                    { value: "latency", label: "按延迟" },
+                    { value: "provider", label: "按提供商" },
+                    { value: "location", label: "按地区" },
+                  ]}
+                  style={{ width: 150 }}
+                />
+              </Group>
+            </Paper>
+
+            {/* Progress */}
+            {isTesting && (
+              <Progress
+                value={progress}
+                size="md"
+                radius="xl"
+                striped
+                animated
+                color="cyan"
+              />
+            )}
+
+            {/* Fastest Banner */}
+            {hasTested && fastest && (
+              <Paper
+                p="md"
+                radius="md"
+                style={{
+                  background: "rgba(0, 212, 255, 0.1)",
+                  border: "1px solid #00d4ff",
+                }}
               >
-                {result.error ? (
-                  <span className="error" title={result.error}>
-                    超时
-                  </span>
-                ) : (
-                  getLatencyText(result.latency_ms)
-                )}
-              </span>
-            </div>
-          ))}
-        </div>
+                <Flex align="center" justify="center" gap="sm" wrap="wrap">
+                  <IconTrophy size={24} color="#FFD700" />
+                  <Text fw={500}>最快:</Text>
+                  <Text fw={700}>{fastest.server.name}</Text>
+                  <Badge
+                    size="lg"
+                    variant="light"
+                    style={{ fontFamily: "monospace" }}
+                  >
+                    {fastest.server.address}
+                  </Badge>
+                  <CopyButton value={fastest.server.address}>
+                    {({ copied, copy }) => (
+                      <Button
+                        size="xs"
+                        variant={copied ? "filled" : "light"}
+                        color={copied ? "green" : "cyan"}
+                        leftSection={
+                          copied ? <IconCheck size={14} /> : <IconCopy size={14} />
+                        }
+                        onClick={copy}
+                      >
+                        {copied ? "已复制" : "复制"}
+                      </Button>
+                    )}
+                  </CopyButton>
+                  <Badge
+                    size="lg"
+                    color={getLatencyColor(fastest.latency_ms)}
+                  >
+                    {getLatencyText(fastest.latency_ms)}
+                  </Badge>
+                </Flex>
+              </Paper>
+            )}
 
-        <div className="legend">
-          <h3>延迟说明</h3>
-          <div className="legend-items">
-            <span className="legend-item">
-              <span className="dot" style={{ background: "#4caf50" }} />
-              &lt; 50ms 优秀
-            </span>
-            <span className="legend-item">
-              <span className="dot" style={{ background: "#8bc34a" }} />
-              50-100ms 良好
-            </span>
-            <span className="legend-item">
-              <span className="dot" style={{ background: "#ff9800" }} />
-              100-200ms 一般
-            </span>
-            <span className="legend-item">
-              <span className="dot" style={{ background: "#f44336" }} />
-              &gt; 200ms 较慢
-            </span>
-          </div>
-        </div>
+            {/* DNS Table */}
+            <Paper
+              radius="md"
+              style={{ background: "rgba(255, 255, 255, 0.03)" }}
+            >
+              <Table.ScrollContainer minWidth={700}>
+                <Table highlightOnHover>
+                  <Table.Thead>
+                    <Table.Tr style={{ background: "rgba(0, 0, 0, 0.3)" }}>
+                      <Table.Th style={{ width: 60, textAlign: "center" }}>
+                        状态
+                      </Table.Th>
+                      <Table.Th>DNS 服务器</Table.Th>
+                      <Table.Th>地址</Table.Th>
+                      <Table.Th>提供商</Table.Th>
+                      <Table.Th>地区</Table.Th>
+                      <Table.Th style={{ width: 100 }}>延迟</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {sortedResults.map((result) => (
+                      <Table.Tr
+                        key={result.server.address}
+                        style={
+                          fastest?.server.address === result.server.address
+                            ? {
+                                background: "rgba(0, 212, 255, 0.1)",
+                              }
+                            : undefined
+                        }
+                      >
+                        <Table.Td style={{ textAlign: "center" }}>
+                          <StatusIcon result={result} />
+                        </Table.Td>
+                        <Table.Td>
+                          <Text fw={500}>{result.server.name}</Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Group gap="xs">
+                            <code
+                              style={{
+                                background: "rgba(0,0,0,0.3)",
+                                padding: "2px 8px",
+                                borderRadius: "4px",
+                                fontSize: "0.85rem",
+                              }}
+                            >
+                              {result.server.address}
+                            </code>
+                            <CopyButton value={result.server.address}>
+                              {({ copied, copy }) => (
+                                <Tooltip
+                                  label={copied ? "已复制" : "复制"}
+                                  withArrow
+                                >
+                                  <Button
+                                    size="compact-xs"
+                                    variant="subtle"
+                                    color={copied ? "green" : "gray"}
+                                    onClick={copy}
+                                  >
+                                    {copied ? (
+                                      <IconCheck size={14} />
+                                    ) : (
+                                      <IconCopy size={14} />
+                                    )}
+                                  </Button>
+                                </Tooltip>
+                              )}
+                            </CopyButton>
+                          </Group>
+                        </Table.Td>
+                        <Table.Td>{result.server.provider}</Table.Td>
+                        <Table.Td>
+                          <Badge variant="light" color="gray">
+                            {result.server.location}
+                          </Badge>
+                        </Table.Td>
+                        <Table.Td>
+                          {result.error ? (
+                            <Badge color="red" variant="light">
+                              超时
+                            </Badge>
+                          ) : (
+                            <Badge
+                              color={getLatencyColor(result.latency_ms)}
+                              variant="filled"
+                              size="lg"
+                            >
+                              {getLatencyText(result.latency_ms)}
+                            </Badge>
+                          )}
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Table.ScrollContainer>
+            </Paper>
 
-        <footer className="footer">
-          <p>测试域名: www.baidu.com | 超时时间: 3秒</p>
-        </footer>
-      </div>
-    </main>
+            {/* Legend */}
+            <Paper p="md" radius="md" style={{ background: "rgba(0,0,0,0.2)" }}>
+              <Text size="sm" c="dimmed" mb="xs">
+                延迟说明
+              </Text>
+              <Group gap="lg">
+                <Badge color="green" variant="dot">
+                  &lt; 50ms 优秀
+                </Badge>
+                <Badge color="teal" variant="dot">
+                  50-100ms 良好
+                </Badge>
+                <Badge color="yellow" variant="dot">
+                  100-200ms 一般
+                </Badge>
+                <Badge color="red" variant="dot">
+                  &gt; 200ms 较慢
+                </Badge>
+              </Group>
+            </Paper>
+
+            {/* Footer */}
+            <Text size="xs" c="dimmed" ta="center">
+              测试域名: www.baidu.com | 超时时间: 3秒
+            </Text>
+          </Stack>
+        </Container>
+      </Box>
+    </MantineProvider>
   );
 }
 
