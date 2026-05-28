@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { WifiSync, Copy } from "lucide-react";
 
 // Status Icons - Flat Design
 import { invoke } from "@tauri-apps/api/core";
@@ -7,49 +8,59 @@ import "./App.css";
 // Status Icons - Flat Design
 const StatusSuccess = () => (
   <svg className="status-icon success" viewBox="0 0 20 20" fill="none">
-    <circle cx="10" cy="10" r="9" stroke="#34C759" strokeWidth="1.5"/>
-    <path d="M6 10L9 13L14 7" stroke="#34C759" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <circle cx="10" cy="10" r="9" stroke="#34C759" strokeWidth="1.5" />
+    <path
+      d="M6 10L9 13L14 7"
+      stroke="#34C759"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
 const StatusError = () => (
   <svg className="status-icon error" viewBox="0 0 20 20" fill="none">
-    <circle cx="10" cy="10" r="9" stroke="#FF3B30" strokeWidth="1.5"/>
-    <path d="M7 7L13 13M13 7L7 13" stroke="#FF3B30" strokeWidth="1.5" strokeLinecap="round"/>
+    <circle cx="10" cy="10" r="9" stroke="#FF3B30" strokeWidth="1.5" />
+    <path
+      d="M7 7L13 13M13 7L7 13"
+      stroke="#FF3B30"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
   </svg>
 );
 
 const StatusPending = () => (
   <svg className="status-icon pending" viewBox="0 0 20 20" fill="none">
-    <circle cx="10" cy="10" r="9" stroke="#8E8E93" strokeWidth="1.5"/>
-    <circle cx="10" cy="10" r="2" fill="#8E8E93"/>
+    <circle cx="10" cy="10" r="9" stroke="#8E8E93" strokeWidth="1.5" />
+    <circle cx="10" cy="10" r="2" fill="#8E8E93" />
   </svg>
 );
 
-const CopyIcon = () => (
-  <svg className="copy-icon" viewBox="0 0 16 16" fill="none">
-    <rect x="3" y="3" width="9" height="9" rx="1" stroke="currentColor" strokeWidth="1.2"/>
-    <rect x="6" y="6" width="7" height="7" rx="1" fill="currentColor" fillOpacity="0.2" stroke="currentColor" strokeWidth="1.2"/>
-  </svg>
-);
+const CopyIcon = () => <Copy />;
 
 const CheckIcon = () => (
   <svg className="check-icon" viewBox="0 0 16 16" fill="none">
-    <path d="M3 8L6.5 11.5L13 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <path
+      d="M3 8L6.5 11.5L13 5"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
 const TrophyIcon = () => (
   <svg className="trophy-icon" viewBox="0 0 20 20" fill="none">
-    <path d="M5 4H15M5 4C5 4 4 8 7 10M5 4V6M15 4C15 4 16 8 13 10M15 4V6M7 10V15L10 17L13 15V10M7 10H13" stroke="#FFD700" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-const RocketIcon = () => (
-  <svg className="rocket-icon" viewBox="0 0 20 20" fill="none">
-    <path d="M10 2C10 2 14 6 14 11C14 13 13 15 13 15L10 12L7 15C7 15 6 13 6 11C6 6 10 2 10 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    <circle cx="10" cy="9" r="1.5" fill="currentColor"/>
-    <path d="M7 15L6 18L10 16L14 18L13 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <path
+      d="M5 4H15M5 4C5 4 4 8 7 10M5 4V6M15 4C15 4 16 8 13 10M15 4V6M7 10V15L10 17L13 15V10M7 10H13"
+      stroke="#FFD700"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
@@ -71,7 +82,9 @@ function App() {
   const [results, setResults] = useState<DnsResult[]>([]);
   const [isTesting, setIsTesting] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [sortBy, setSortBy] = useState<"latency" | "provider" | "location">("latency");
+  const [sortBy, setSortBy] = useState<"latency" | "provider" | "location">(
+    "latency",
+  );
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const [hasTested, setHasTested] = useState(false);
 
@@ -94,7 +107,7 @@ function App() {
           latency_ms: null,
           success: false,
           error: null,
-        }))
+        })),
       );
     } catch (e) {
       console.error("Failed to fetch DNS list:", e);
@@ -179,17 +192,25 @@ function App() {
         </header>
 
         <div className="controls">
-          <button
-            className="test-btn"
-            onClick={testAll}
-            disabled={isTesting}
-          >
-            {isTesting ? "测试中..." : <><RocketIcon /> 开始测速</>}
+          <button className="test-btn" onClick={testAll} disabled={isTesting}>
+            {isTesting ? (
+              "测试中..."
+            ) : (
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "8px" }}
+              >
+                <WifiSync />
+                开始测速
+              </div>
+            )}
           </button>
 
           <div className="sort-control">
             <label>排序:</label>
-            <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+            >
               <option value="latency">按延迟</option>
               <option value="provider">按提供商</option>
               <option value="location">按地区</option>
@@ -205,7 +226,8 @@ function App() {
 
         {hasTested && fastest && (
           <div className="fastest-banner">
-            <TrophyIcon /> <span>最快:</span> <strong>{fastest.server.name}</strong>
+            <TrophyIcon /> <span>最快:</span>{" "}
+            <strong>{fastest.server.name}</strong>
             <span className="fastest-address-group">
               <span className="address-text">{fastest.server.address}</span>
               <button
@@ -213,7 +235,15 @@ function App() {
                 onClick={() => copyToClipboard(fastest.server.address)}
                 title="复制地址"
               >
-                {copiedAddress === fastest.server.address ? <><CheckIcon /> 已复制</> : <><CopyIcon /> 复制</>}
+                {copiedAddress === fastest.server.address ? (
+                  <>
+                    <CheckIcon /> 已复制
+                  </>
+                ) : (
+                  <>
+                    <CopyIcon /> 复制
+                  </>
+                )}
               </button>
             </span>
             <span style={{ color: getLatencyColor(fastest.latency_ms) }}>
@@ -242,12 +272,20 @@ function App() {
             <div
               key={result.server.address}
               className={`dns-item ${result.success ? "success" : ""} ${
-                fastest?.server.address === result.server.address ? "fastest" : ""
+                fastest?.server.address === result.server.address
+                  ? "fastest"
+                  : ""
               }`}
               style={{ animationDelay: `${index * 0.05}s` }}
             >
               <span className="status">
-                {result.success ? <StatusSuccess /> : result.error ? <StatusError /> : <StatusPending />}
+                {result.success ? (
+                  <StatusSuccess />
+                ) : result.error ? (
+                  <StatusError />
+                ) : (
+                  <StatusPending />
+                )}
               </span>
               <span className="name">{result.server.name}</span>
               <span className="address-cell">
@@ -257,7 +295,11 @@ function App() {
                   onClick={() => copyToClipboard(result.server.address)}
                   title="复制地址"
                 >
-                  {copiedAddress === result.server.address ? <CheckIcon /> : <CopyIcon />}
+                  {copiedAddress === result.server.address ? (
+                    <CheckIcon />
+                  ) : (
+                    <CopyIcon />
+                  )}
                 </button>
               </span>
               <span className="provider">{result.server.provider}</span>
