@@ -1,0 +1,8 @@
+# Workaround: ~/.local/share/pnpm ships a `cc` shim that shadows the real
+# Apple clang in PATH, breaking Rust linking and C compilation.
+# Pin the C compiler/linker to the system clang so cargo builds work.
+[env]
+CC = "/usr/bin/clang"
+
+[target.aarch64-apple-darwin]
+linker = "/usr/bin/clang"
